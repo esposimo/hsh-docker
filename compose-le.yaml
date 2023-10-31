@@ -1,0 +1,10 @@
+FROM neilpang/acme.sh
+
+RUN EMAIL_LE="simone.esposito1986@gmail.com" \
+apk -f add bash && \
+mkdir /renew_cert /home/renew_user /scripts && \
+echo "renew_user:x:1000:1000:" >> /etc/group && \
+echo "renew_user:x:1000:1000:root:/home/renew_user:/bin/sh" >> /etc/passwd && \
+acme.sh --register-account --server letsencrypt_test -m  ${EMAIL_LE}
+
+CMD ["daemon"]

@@ -1,0 +1,4 @@
+FROM ghcr.io/home-assistant/home-assistant:stable
+RUN mkdir /saved
+#COPY ./ha/*.yaml /config/
+#COPY ./ha/SERVICE_ACCOUNT.JSON /config/

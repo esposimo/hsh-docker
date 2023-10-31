@@ -1,0 +1,123 @@
+networks:
+  log_network:
+    driver: bridge
+    name: log_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.80.128/25
+          ip_range: 10.10.80.0/25
+          gateway: 10.10.80.129
+
+services:
+
+  elastic:
+    container_name: elastic-hsh
+    build:
+      context: .
+      dockerfile: compose-elastic.yaml
+    volumes:
+      #- /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    environment:
+      - discovery.type=single-node
+    privileged: true
+    networks:
+      log_network:
+        ipv4_address: 10.10.80.216
+    ports:
+      - 9200:9200
+      - 9300:9300
+
+
+
+  kibana:
+    container_name: kibana-hsh
+    build:
+      context: .
+      dockerfile: compose-kibana.yaml
+    volumes:
+      #- /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    privileged: true
+    networks:
+      log_network:
+        ipv4_address: 10.10.80.217
+    ports:
+      - 5605:5601
+
+
+
+  logstash:
+    container_name: logstash-hsh
+    build:
+      context: .
+      dockerfile: compose-logstash.yaml
+    volumes:
+      - /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    privileged: true
+    networks:
+      log_network:
+        ipv4_address: 10.10.80.213
+
+
+
+  filebeat-apache:
+    container_name: filebeat-apache-hsh
+    build:
+      context: .
+      dockerfile: compose-filebeat-apache.yaml
+    volumes:
+#      - /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
+      - /docker/data/ws/logs/:/logs
+      - /docker/data/filebeat-apache/:/config
+      - /docker/data/filebeat-apache/registry:/registry
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    privileged: true
+    networks:
+      log_network:
+        ipv4_address: 10.10.80.214
+
+  filebeat-mqtt:
+    container_name: filebeat-mqtt-hsh
+    build:
+      context: .
+      dockerfile: compose-filebeat-mqtt.yaml
+    volumes:
+#      - /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
+      - /docker/data/filebeat-mqtt/:/config
+      - /docker/data/filebeat-mqtt/registry:/registry
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    privileged: true
+    networks:
+      log_network:
+        ipv4_address: 10.10.80.218
+
+
+
+  grafana:
+    container_name: grafana-hsh
+    build:
+      context: .
+      dockerfile: compose-grafana.yaml
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    privileged: true
+    networks:
+      log_network:
+        ipv4_address: 10.10.80.219
+    ports:
+      - 3000:3000

@@ -1,0 +1,144 @@
+networks:
+  iot_network:
+    driver: bridge
+    name: iot_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.80.0/25
+          ip_range: 10.10.80.0/25
+          gateway: 10.10.80.1
+
+services:
+  # WEB SERVER
+  ws:
+    container_name: ws_proxy
+    build:
+      context: .
+      dockerfile: compose-ws.yaml
+    volumes:
+      - /docker/data/ws/vhosts:/vhosts
+      - /docker/data/ws/logs/:/logs
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    privileged: true
+    networks:
+      iot_network:
+        ipv4_address: 10.10.80.5
+    ports:
+      - 8080:80
+      - 40443:443
+
+  # Auto Renew Certificate
+  renew_cert:
+    container_name: renew_cert
+    build:
+      context: .
+      dockerfile: compose-le.yaml
+    volumes:
+      - /docker/data/ws/vhosts:/renew_cert
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    privileged: true
+    networks:
+      iot_network:
+        ipv4_address: 10.10.80.100
+
+
+  homeassistant:
+    container_name: homeassistant
+    build:
+      context: .
+      dockerfile: compose-ha.yaml
+    volumes:
+      - /docker/data/ha:/config
+      - /data/hsh/homeassistant/saved:/saved
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Rome
+    privileged: true
+    networks:
+      iot_network:
+        ipv4_address: 10.10.80.10
+        #ipv4_address: 192.168.10.10
+    ports:
+      - 8123:8123
+      - 5001:5001
+      - 2869:2869
+    depends_on:
+      - mysql-x-ha
+      - mqtt-x-ha
+
+
+  mysql-x-ha:
+    container_name: mysql_ha
+    build:
+      context: .
+      dockerfile: compose-mysql-x-ha.yaml
+    volumes:
+      - /docker/data/mysql-x-ha:/var/lib/mysql
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=simone
+      - MYSQL_DATABASE=ha
+      - MYSQL_USER=hauser
+      - MYSQL_PASSWORD=hapwd
+    privileged: true
+    networks:
+      iot_network:
+        ipv4_address: 10.10.80.11
+    ports:
+      - 3306:3306
+
+
+
+  mysql-x-logstash:
+    container_name: mysql_log
+    build:
+      context: .
+      dockerfile: compose-mysql-x-log.yaml
+    volumes:
+      - /docker/data/mysql-log:/var/lib/mysql
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=simone
+      - MYSQL_DATABASE=log
+      - MYSQL_USER=log
+      - MYSQL_PASSWORD=log
+    privileged: true
+    networks:
+      iot_network:
+        ipv4_address: 10.10.80.15
+    ports:
+      - 3310:3306
+
+  mqtt-x-ha:
+    container_name: mqtt-ha
+    build:
+      context: .
+      dockerfile: mqtt-x-ha.yaml
+    volumes:
+      #- /data/hsh/mqtt/config:/mosquitto/config
+      #- /data/hsh/mqtt/data:/mosquitto/data
+      #- /data/hsh/mqtt/log:/mosquitto/log
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    privileged: true
+    networks:
+      iot_network:
+        ipv4_address: 10.10.80.12
+    ports:
+      - 1883:1883
+      - 9001:9001
+
+
+
+
+

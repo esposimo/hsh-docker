@@ -1,0 +1,20 @@
+filebeat.config:
+  modules:
+    path: ${path.config}/modules.d/*.yml
+    reload.enabled: false
+  inputs:
+    enabled: true
+    path: /config/*.yml
+
+# cambio la posizione del registry path, mappandolo sull'host. In questo modo se rebuildo il container conservo le informazioni dei log già analizzati
+filebeat.registry.path: /registry
+
+processors:
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+
+
+
+output.logstash:
+  hosts: ["10.10.80.213:5044"]
+  index: "apache_logs"
