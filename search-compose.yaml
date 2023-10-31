@@ -10,26 +10,55 @@ networks:
           gateway: 10.10.80.129
 
 services:
-
-  elastic:
-    container_name: elastic-hsh
+# sysctl -w vm.max_map_count=262144
+# LiM1PKlpZSPCF8uwpId3
+# docker exec -it elastic_master /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -b -s
+# eyJ2ZXIiOiI4LjEwLjIiLCJhZHIiOlsiMTAuMTAuODAuMjE2OjkyMDAiXSwiZmdyIjoiYTI2NDIxNDgyZGM2ZGRiYzJlNTUxZTM5OGEwZWQxMTdiY2Y4MGU5MjI3NDU1N2EyNTRiYTZjMDdjZDk2ZWRmNCIsImtleSI6ImI0ZFdob3NCNnFpLVhHT0RxcXNUOkF3Z3Z6ZmROUUQtN0NDRjg5Y3N2VGcifQ==
+# docker exec -it elastic_master /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana
+# enrollment /usr/share/kibana/bin/kibana-setup -t eyJ2ZXIiOiI4LjEwLjIiLCJhZHIiOlsiMTAuMTAuODAuMjE2OjkyMDAiXSwiZmdyIjoiYTI2NDIxNDgyZGM2ZGRiYzJlNTUxZTM5OGEwZWQxMTdiY2Y4MGU5MjI3NDU1N2EyNTRiYTZjMDdjZDk2ZWRmNCIsImtleSI6ImI0ZFdob3NCNnFpLVhHT0RxcXNUOkF3Z3Z6ZmROUUQtN0NDRjg5Y3N2VGcifQ==
+  elastic_master:
+    container_name: elastic_master
     build:
       context: .
-      dockerfile: compose-elastic.yaml
+      dockerfile: compose-elastic-master.yaml
     volumes:
       #- /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     restart: always
     environment:
-      - discovery.type=single-node
+      - node.name=elastic_content
+      - cluster.name=cluster_elastic
+      - node.roles=master, data, data_content, data_hot
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
     privileged: true
     networks:
       log_network:
         ipv4_address: 10.10.80.216
     ports:
       - 9200:9200
-      - 9300:9300
+
+  elastic_cold:
+    container_name: elastic_cold
+    build:
+      context: .
+      dockerfile: compose-elastic-cold.yaml
+    volumes:
+      #- /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    environment:
+      - node.name=elastic_warm
+      - cluster.name=cluster_elastic
+      - node.roles=data_warm , data_cold
+      - ENROLLMENT_TOKEN=${ELASTIC_NODE_ENROLL}
+    privileged: true
+    networks:
+      log_network:
+        ipv4_address: 10.10.80.217
+    ports:
+      - 9201:9200
 
 
 
@@ -46,78 +75,78 @@ services:
     privileged: true
     networks:
       log_network:
-        ipv4_address: 10.10.80.217
+        ipv4_address: 10.10.80.220
     ports:
       - 5605:5601
 
 
 
-  logstash:
-    container_name: logstash-hsh
-    build:
-      context: .
-      dockerfile: compose-logstash.yaml
-    volumes:
-      - /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-    restart: always
-    privileged: true
-    networks:
-      log_network:
-        ipv4_address: 10.10.80.213
+# logstash:
+#   container_name: logstash-hsh
+#   build:
+#     context: .
+#     dockerfile: compose-logstash.yaml
+#   volumes:
+#     - /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
+#     - /etc/timezone:/etc/timezone:ro
+#     - /etc/localtime:/etc/localtime:ro
+#   restart: always
+#   privileged: true
+#   networks:
+#     log_network:
+#       ipv4_address: 10.10.80.213
 
 
 
-  filebeat-apache:
-    container_name: filebeat-apache-hsh
-    build:
-      context: .
-      dockerfile: compose-filebeat-apache.yaml
-    volumes:
+# filebeat-apache:
+#   container_name: filebeat-apache-hsh
+#   build:
+#     context: .
+#     dockerfile: compose-filebeat-apache.yaml
+#   volumes:
 #      - /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
-      - /docker/data/ws/logs/:/logs
-      - /docker/data/filebeat-apache/:/config
-      - /docker/data/filebeat-apache/registry:/registry
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-    restart: always
-    privileged: true
-    networks:
-      log_network:
-        ipv4_address: 10.10.80.214
+#     - /docker/data/ws/logs/:/logs
+#     - /docker/data/filebeat-apache/:/config
+#     - /docker/data/filebeat-apache/registry:/registry
+#     - /etc/timezone:/etc/timezone:ro
+#     - /etc/localtime:/etc/localtime:ro
+#   restart: always
+#   privileged: true
+#   networks:
+#     log_network:
+#       ipv4_address: 10.10.80.214
 
-  filebeat-mqtt:
-    container_name: filebeat-mqtt-hsh
-    build:
-      context: .
-      dockerfile: compose-filebeat-mqtt.yaml
-    volumes:
+# filebeat-mqtt:
+#   container_name: filebeat-mqtt-hsh
+#   build:
+#     context: .
+#     dockerfile: compose-filebeat-mqtt.yaml
+#   volumes:
 #      - /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
-      - /docker/data/filebeat-mqtt/:/config
-      - /docker/data/filebeat-mqtt/registry:/registry
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-    restart: always
-    privileged: true
-    networks:
-      log_network:
-        ipv4_address: 10.10.80.218
+#     - /docker/data/filebeat-mqtt/:/config
+#     - /docker/data/filebeat-mqtt/registry:/registry
+#     - /etc/timezone:/etc/timezone:ro
+#     - /etc/localtime:/etc/localtime:ro
+#   restart: always
+#   privileged: true
+#   networks:
+#     log_network:
+#       ipv4_address: 10.10.80.218
 
 
 
-  grafana:
-    container_name: grafana-hsh
-    build:
-      context: .
-      dockerfile: compose-grafana.yaml
-    volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-    restart: always
-    privileged: true
-    networks:
-      log_network:
-        ipv4_address: 10.10.80.219
-    ports:
-      - 3000:3000
+# grafana:
+#   container_name: grafana-hsh
+#   build:
+#     context: .
+#     dockerfile: compose-grafana.yaml
+#   volumes:
+#     - /etc/timezone:/etc/timezone:ro
+#     - /etc/localtime:/etc/localtime:ro
+#   restart: always
+#   privileged: true
+#   networks:
+#     log_network:
+#       ipv4_address: 10.10.80.219
+#   ports:
+#     - 3000:3000

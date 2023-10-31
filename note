@@ -1,0 +1,58 @@
+PUT _component_template/my-mappings
+{
+  "template": {
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "type": "date",
+          "format": "date_optional_time||epoch_millis"
+        },
+        "message": {
+          "type": "wildcard"
+        }
+      }
+    }
+  },
+  "_meta": {
+    "description": "Mappings for @timestamp and message fields",
+    "my-custom-meta-field": "More arbitrary metadata"
+  }
+}
+
+
+PUT _component_template/my-settings
+{
+  "template": {
+    "settings": {
+      "index.lifecycle.name": "mypolicy"
+    }
+  },
+  "_meta": {
+    "description": "Settings for ILM",
+    "my-custom-meta-field": "More arbitrary metadata"
+  }
+}
+
+
+
+PUT _index_template/my-index-template
+{
+  "index_patterns": ["myindex_with_retention"],
+  "data_stream": { },
+  "composed_of": [ "my-mappings", "my-settings" ],
+  "priority": 500,
+  "_meta": {
+    "description": "Template for my time series data",
+    "my-custom-meta-field": "More arbitrary metadata"
+  }
+}
+
+
+
+
+
+PUT myindex_with_retention/_bulk
+{ "create":{ } }
+{ "@timestamp": "2023-30-10T16:21:15.000Z", "message": "Messaggio vecchio" }
+{ "create":{ } }
+{ "@timestamp": "2023-31-10T19:59:00.000Z", "message": "Inserito ora" }
