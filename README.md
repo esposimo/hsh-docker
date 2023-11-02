@@ -13,6 +13,8 @@ Nel caso in cui si voglia utilizzare questo progetto, è essenziale sapere che a
 
 Tuttavia con un buon router, questo scoglio è superabile, ma l'argomento non sarà trattato qui
 
+E no, i Fritzbox non sono ottimi router per questo scopo.
+
 ## Stack applicativo
 
 Di seguito la lista dei container che vengono utilizzati
