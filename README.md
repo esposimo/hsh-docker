@@ -47,3 +47,26 @@ Di seguito la lista dei container che vengono utilizzati
 
 ### Dispositivi futuri
 - Chromecast, Telecamere, Smart TV, sensori temperatura/umidità/luminosità, etc.
+
+## Installazione
+### Prerequisiti
+
+- Docker
+- Utenza di root
+
+### Procedura
+Eseguire il seguente comando, prerequisito importante per i container elastic
+```
+sysctl -w vm.max_map_count=262144
+```
+Clonare il repository
+```
+git clone https://github.com/esposimo/hsh-docker/
+```
+Configurare le variabili nel file environment
+
+Eseguire lo script di installazione 
+```
+./run.sh
+```
+
