@@ -1,3 +1,2 @@
 .env
-/kibana/kibana.crt
-/kibana/kibana.key
+/kibana/
