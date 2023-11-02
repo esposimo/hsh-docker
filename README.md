@@ -63,10 +63,51 @@ Clonare il repository
 ```
 git clone https://github.com/esposimo/hsh-docker/
 ```
-Configurare le variabili nel file environment
+[Configurare le variabili nel file environment](https://github.com/esposimo/hsh-docker/edit/master/README.md#environment-file)
 
 Eseguire lo script di installazione 
 ```
 ./run.sh
 ```
 
+## environment file
+
+
+```bash
+# IP & Port Section
+# Tutti gli ip dovranno rientrare nella subnet 10.10.80.0/24
+
+# Ip del nodo master di elastic search
+IP_ADDRESS_ELASTIC_DATA=<elastic-master-node-ip>
+
+# Ip del nodo elastic che contiene i tier cold/warm
+IP_ADDRESS_ELASTIC_COLD=<elastic-cold-node-ip>
+
+# Ip del container kibana
+IP_ADDRESS_KIBANA=<kibana-ip>
+
+# Porta esposta dall'host docker per il nodo master di elastic
+EXPOSE_PORT_ELASTIC_DATA=<elastic-master-expose-port>
+
+# Porta esposta dall'host docker per il nodo cold/warm di elastic
+EXPOSE_PORT_ELASTIC_COLD=<elastic-cold-espose-port>
+
+# Porta esposta dall'host docker per l'istanza di kibana
+EXPOSE_PORT_KIBANA=<kibana-port>
+
+
+
+
+
+
+# CONTAINER Section
+
+# Nome del container Elastic Master
+CONTAINER_NAME_ELASTIC_DATA=<elastic-master-container-name>
+
+# Nome del container Elastic cold/warm
+CONTAINER_NAME_ELASTIC_COLD=<elastic-cold-container-name>
+
+# Nome del container di kibana
+CONTAINER_NAME_KIBANA=<kibana-container-name>
+```
