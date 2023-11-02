@@ -63,7 +63,7 @@ Clonare il repository
 ```
 git clone https://github.com/esposimo/hsh-docker/
 ```
-[Configurare le variabili nel file environment](https://github.com/esposimo/hsh-docker/README.md#environment-file)
+[Configurare le variabili nel file environment](https://github.com/esposimo/hsh-docker/tree/master#environment-file)
 
 Eseguire lo script di installazione 
 ```
