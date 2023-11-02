@@ -17,7 +17,7 @@ services:
 # docker exec -it elastic_master /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana
 # enrollment /usr/share/kibana/bin/kibana-setup -t eyJ2ZXIiOiI4LjEwLjIiLCJhZHIiOlsiMTAuMTAuODAuMjE2OjkyMDAiXSwiZmdyIjoiYTI2NDIxNDgyZGM2ZGRiYzJlNTUxZTM5OGEwZWQxMTdiY2Y4MGU5MjI3NDU1N2EyNTRiYTZjMDdjZDk2ZWRmNCIsImtleSI6ImI0ZFdob3NCNnFpLVhHT0RxcXNUOkF3Z3Z6ZmROUUQtN0NDRjg5Y3N2VGcifQ==
   elastic_master:
-    container_name: elastic_master
+    container_name: ${CONTAINER_NAME_ELASTIC_DATA}
     build:
       context: .
       dockerfile: compose-elastic-master.yaml
@@ -29,17 +29,17 @@ services:
     environment:
       - node.name=elastic_content
       - cluster.name=cluster_elastic
-      - node.roles=master, data, data_content, data_hot
+      - node.roles=master, data_content, data_hot
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
     privileged: true
     networks:
       log_network:
-        ipv4_address: 10.10.80.216
+        ipv4_address: ${IP_ADDRESS_ELASTIC_DATA}
     ports:
-      - 9200:9200
+      - ${EXPOSE_PORT_ELASTIC_DATA}:9200
 
   elastic_cold:
-    container_name: elastic_cold
+    container_name: ${CONTAINER_NAME_ELASTIC_COLD}
     build:
       context: .
       dockerfile: compose-elastic-cold.yaml
@@ -51,19 +51,19 @@ services:
     environment:
       - node.name=elastic_warm
       - cluster.name=cluster_elastic
-      - node.roles=data_warm , data_cold
+      - node.roles=master, data_warm , data_cold
       - ENROLLMENT_TOKEN=${ELASTIC_NODE_ENROLL}
     privileged: true
     networks:
       log_network:
-        ipv4_address: 10.10.80.217
+        ipv4_address: ${IP_ADDRESS_ELASTIC_COLD}
     ports:
-      - 9201:9200
+      - ${EXPOSE_PORT_ELASTIC_COLD}:9200
 
 
 
   kibana:
-    container_name: kibana-hsh
+    container_name: ${CONTAINER_NAME_KIBANA}
     build:
       context: .
       dockerfile: compose-kibana.yaml
@@ -72,12 +72,17 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     restart: always
+    environment:
+      - SERVER_PUBLICBASEURL=https://${LOCAL_IP}:${EXPOSE_PORT_KIBANA}/
+      - SERVER_SSL_CERTIFICATE=/usr/share/kibana/config/certs/kibana.crt
+      - SERVER_SSL_KEY=/usr/share/kibana/config/certs/kibana.key
+      - SERVER_SSL_ENABLED=true
     privileged: true
     networks:
       log_network:
-        ipv4_address: 10.10.80.220
+        ipv4_address: ${IP_ADDRESS_KIBANA}
     ports:
-      - 5605:5601
+      - ${EXPOSE_PORT_KIBANA}:5601
 
 
 

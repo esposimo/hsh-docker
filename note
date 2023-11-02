@@ -1,3 +1,84 @@
+# policy
+
+PUT _ilm/policy/mypolicy
+{
+  "policy": {
+    "phases": {
+      "hot": {
+        "min_age": "0ms",
+        "actions": {
+          "rollover": {
+            "max_age": "10m",
+            "max_docs": 10,
+            "max_primary_shard_size": "50gb"
+          },
+          "set_priority": {
+            "priority": 100
+          },
+          "shrink": {
+            "number_of_shards": 1
+          }
+        }
+      },
+      "warm": {
+        "min_age": "5m",
+        "actions": {
+          "set_priority": {
+            "priority": 50
+          },
+          "shrink": {
+            "number_of_shards": 1
+          },
+          "allocate": {
+            "number_of_replicas": 0
+          }
+        }
+      },
+      "cold": {
+        "min_age": "10m",
+        "actions": {
+          "set_priority": {
+            "priority": 0
+          },
+          "allocate": {
+            "number_of_replicas": 0
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 PUT _component_template/my-mappings
 {
   "template": {
