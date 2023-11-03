@@ -113,3 +113,28 @@ CONTAINER_NAME_ELASTIC_COLD=<elastic-cold-container-name>
 # Nome del container di kibana
 CONTAINER_NAME_KIBANA=<kibana-container-name>
 ```
+
+## Elastic search section
+### ILM Policy
+
+### Data Stream Index
+#### Metrics
+<details>
+  
+<summary>consumption</summary>
+
+```json
+{
+  "@timestamp": "date",
+  "@version": "text",
+  "power": "float",
+  "sensor_gen": "text", // to remove
+  "sensor_vendor": "text", // to remove
+  "shelly_name": "text",
+  "topic": "text"
+}
+```
+    
+</details>
+
+#### Logs
