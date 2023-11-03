@@ -53,6 +53,8 @@ Di seguito la lista dei container che vengono utilizzati
 
 - Docker
 - Utenza di root
+- cURL
+- openssl
 
 ### Procedura
 Eseguire il seguente comando, prerequisito importante per i container elastic
