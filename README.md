@@ -58,17 +58,17 @@ Di seguito la lista dei container che vengono utilizzati
 
 ### Procedura
 Eseguire il seguente comando, prerequisito importante per i container elastic
-```
+```sh
 sysctl -w vm.max_map_count=262144
 ```
 Clonare il repository
-```
+```sh
 git clone https://github.com/esposimo/hsh-docker/
 ```
 [Configurare le variabili nel file environment](https://github.com/esposimo/hsh-docker/tree/master#environment-file)
 
 Eseguire lo script di installazione 
-```
+```sh
 ./run.sh
 ```
 
