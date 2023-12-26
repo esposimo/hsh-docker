@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # Stampa l'usage del comando web
 function hsh::web ()
 {
@@ -15,10 +14,6 @@ function hsh::web ()
 	printf "   restart\tRiavvia il webserver\n";
 	printf "   stop\t\tStop del webserver\n";
 	printf "   start\tStart del webserver\n";
-#	printf "   log-list\tElenca i log format gestiti\n";
-#	printf "   app-create\tCrea un app da utilizzare per le proxy pass\n";
-#	printf "   app-delete\tElimina un'app da utilizzare per le proxy pass\n"
-#	printf "   app-list\tElenca le app gestite\n";
 	printf "   help\t\tStampa l'help per uno dei comandi di web, es. \"hsh web help create\"\n"
 }
 
@@ -71,8 +66,6 @@ hsh::web::create()
 		jq --arg v "${VHOST_NAME}" '.ws.vhosts[]|select(.vhost_name == $v)' ${CONFIG_FILE};
 		exit;
 	fi;
-
-
 
 	while getopts "s:p:a:" flag ${GETOPTS_PARAMS[*]}; do
 		case "${flag}" in
@@ -148,6 +141,14 @@ hsh::web::delete()
 	_tmpfile=$(mktemp)
 	jq --arg v ${VHOST_NAME} 'del(.ws.vhosts[]|select(.vhost_name == $v))' ${CONFIG_FILE} > $_tmpfile;
 	mv $_tmpfile ${CONFIG_FILE};
+
+	
+	VS_PATH_DOCROOT=${WS_VHOST_PATH}/${VHOST_NAME}/docroot
+	VS_PATH_CERTS=${WS_VHOST_PATH}/${VHOST_NAME}/certs
+	HTTP_VHOST_FILE=${WS_VHOST_CONF_PATH}/${VHOST_NAME}.http.conf
+	HTTPS_VHOST_FILE=${WS_VHOST_CONF_PATH}/${VHOST_NAME}.https.conf
+
+	rm -f ${HTTP_VHOST_FILE} ${HTTPS_VHOST_FILE};
 	hsh::web::list;
 
 	# delete dei file del virtualhost
@@ -186,7 +187,6 @@ hsh::web::details()
 		exit 1;
 	fi;
 
-
 	VHOST_NAME=${COMMAND_ARGS[0]}
 	GETOPTS_PARAMS="${COMMAND_ARGS[@]:1}"
 
@@ -198,8 +198,6 @@ hsh::web::details()
 	jq --arg v "${VHOST_NAME}" '.ws.vhosts[]|select(.vhost_name == $v)' ${CONFIG_FILE};
 
 }
-
-
 
 # rebuild dei virtualhost
 hsh::web::reload()
@@ -222,10 +220,6 @@ hsh::web::reload()
 	fi;
 }
 
-
-
-
-
 __make_single_vhost()
 {
 
@@ -242,82 +236,91 @@ __make_single_vhost()
 
 	_ws_url=$(echo ${_proxy} | perl -pe 's/^http[s]/ws/g')
 
+
+	VS_PATH_DOCROOT=${WS_VHOST_PATH}/${_vhost_name}/docroot
+	VS_PATH_CERTS=${WS_VHOST_PATH}/${_vhost_name}/certs
+	HTTP_VHOST_FILE=${WS_VHOST_CONF_PATH}/${_vhost_name}.http.conf
+	HTTPS_VHOST_FILE=${WS_VHOST_CONF_PATH}/${_vhost_name}.https.conf
+
+	mkdir -p ${VS_PATH_DOCROOT};
+	mkdir -p ${VS_PATH_CERTS};
+
 	if [[ $_http == "true" ]] ; then
-		printf "<VirtualHost *:80>\n";
-		printf "\tDocumentRoot \"${_base_docroot}/${_vhost_name}/docroot\"\n";
-		printf "\tServerName ${_vhost_name}\n";
+		printf "<VirtualHost *:80>\n" > ${HTTP_VHOST_FILE};
+		printf "\tDocumentRoot \"${WS_VHOST_PATH}/${_vhost_name}/docroot\"\n" >> ${HTTP_VHOST_FILE};
+		printf "\tServerName ${_vhost_name}\n" >> ${HTTP_VHOST_FILE};
 		for a in $_aliases ; do
-			printf "\tServerAlias ${a}\n";
+			printf "\tServerAlias ${a}\n" >> ${HTTP_VHOST_FILE};
 		done;
-		printf "\n";
-		printf "\t<Directory \"${_base_docroot}/${_vhost_name}/docroot/\">\n";
-		printf "\t\tOptions Indexes FollowSymlinks\n";
-		printf "\t\tAllowOverride None\n";
-		printf "\t\tRequire all granted\n";
-		printf "\t</Directory>\n";
-		printf "\n";
-		printf "\tRewriteEngine on\n";
-		printf "\n";
-		printf "\tRewriteCond %%{DOCUMENT_ROOT}/\$1 -f [OR]\n";
-		printf "\tRewriteCond %%{DOCUMENT_ROOT}/\$1 -d\n";
-		printf "\tRewriteCond %%{REQUEST_URI} !=/\n";
-		printf "\tRewriteRule (.*) - [L]\n";
-		printf "\n";
-		printf "\tRewriteCond %%{HTTP:Upgrade} =websocket [NC]\n";
-		printf "\tRewriteRule /(.*) ${_ws_url}\$1 [P,L]\n";
-		printf "\n";
-		printf "\tRewriteCond %%{HTTP:Upgrade} !=websocket [NC]\n";
-		printf "\tRewriteRule /(.*) ${_proxy}\$1 [P,L]\n";
-		printf "\n";
-		printf "\tRewriteRule ^/(.*)$ ${_proxy}\$1 [P,QSA]\n";
-		printf "\n";
-		printf "\tCustomLog \"|bin/rotatelogs -l /logs/${_vhost_name}.ok.http.%%Y-%%m-%%d.log 86400\" json_format\n";
-		printf "\tErrorLog  \"|bin/rotatelogs -l /logs/${_vhost_name}.error.http.%%Y-%%m-%%d.log 86400\"\n";
-		printf "\n";
-		printf "</VirtualHost>\n";
+		printf "\n" >> ${HTTP_VHOST_FILE};
+		printf "\t<Directory \"${WS_VHOST_PATH}/${_vhost_name}/docroot/\">\n" >> ${HTTP_VHOST_FILE};
+		printf "\t\tOptions Indexes FollowSymlinks\n" >> ${HTTP_VHOST_FILE};
+		printf "\t\tAllowOverride None\n" >> ${HTTP_VHOST_FILE};
+		printf "\t\tRequire all granted\n" >> ${HTTP_VHOST_FILE};
+		printf "\t</Directory>\n" >> ${HTTP_VHOST_FILE};
+		printf "\n" >> ${HTTP_VHOST_FILE};
+		printf "\tRewriteEngine on\n" >> ${HTTP_VHOST_FILE};
+		printf "\n" >> ${HTTP_VHOST_FILE};
+		printf "\tRewriteCond %%{DOCUMENT_ROOT}/\$1 -f [OR]\n" >> ${HTTP_VHOST_FILE};
+		printf "\tRewriteCond %%{DOCUMENT_ROOT}/\$1 -d\n" >> ${HTTP_VHOST_FILE};
+		printf "\tRewriteCond %%{REQUEST_URI} !=/\n" >> ${HTTP_VHOST_FILE};
+		printf "\tRewriteRule (.*) - [L]\n" >> ${HTTP_VHOST_FILE};
+		printf "\n" >> ${HTTP_VHOST_FILE};
+		printf "\tRewriteCond %%{HTTP:Upgrade} =websocket [NC]\n" >> ${HTTP_VHOST_FILE};
+		printf "\tRewriteRule /(.*) ${_ws_url}\$1 [P,L]\n" >> ${HTTP_VHOST_FILE};
+		printf "\n" >> ${HTTP_VHOST_FILE};
+		printf "\tRewriteCond %%{HTTP:Upgrade} !=websocket [NC]\n" >> ${HTTP_VHOST_FILE};
+		printf "\tRewriteRule /(.*) ${_proxy}\$1 [P,L]\n" >> ${HTTP_VHOST_FILE};
+		printf "\n" >> ${HTTP_VHOST_FILE};
+		printf "\tRewriteRule ^/(.*)$ ${_proxy}\$1 [P,QSA]\n" >> ${HTTP_VHOST_FILE};
+		printf "\n" >> ${HTTP_VHOST_FILE};
+		printf "\tCustomLog \"|bin/rotatelogs -l /logs/${_vhost_name}.ok.http.%%Y-%%m-%%d.log 86400\" json_format\n" >> ${HTTP_VHOST_FILE};
+		printf "\tErrorLog  \"|bin/rotatelogs -l /logs/${_vhost_name}.error.http.%%Y-%%m-%%d.log 86400\"\n" >> ${HTTP_VHOST_FILE};
+		printf "\n" >> ${HTTP_VHOST_FILE};
+		printf "</VirtualHost>\n" >> ${HTTP_VHOST_FILE};
 	fi;
 
 	if [[ $_tls == "true" ]] ; then
-		printf "<VirtualHost *:443>\n";
-		printf "\tDocumentRoot \"${_base_docroot}/${_vhost_name}/docroot\"\n";
-		printf "\tServerName ${_vhost_name}\n";
+		printf "<VirtualHost *:443>\n" > ${HTTPS_VHOST_FILE};
+		printf "\tDocumentRoot \"${WS_VHOST_PATH}/${_vhost_name}/docroot\"\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tServerName ${_vhost_name}\n" >> ${HTTPS_VHOST_FILE};
 		for a in $_aliases ; do
-			printf "\tServerAlias ${a}\n";
+			printf "\tServerAlias ${a}\n" >> ${HTTPS_VHOST_FILE};
 		done;
-		printf "\n";
-		printf "\t<Directory \"${_base_docroot}/${_vhost_name}/docroot/\">\n";
-		printf "\t\tOptions Indexes FollowSymlinks\n";
-		printf "\t\tAllowOverride None\n";
-		printf "\t\tRequire all granted\n";
-		printf "\t</Directory>\n";
-		printf "\n";
-		printf "\tRewriteEngine on\n";
-		printf "\n";
-		printf "\tRewriteCond %%{DOCUMENT_ROOT}/\$1 -f [OR]\n";
-		printf "\tRewriteCond %%{DOCUMENT_ROOT}/\$1 -d\n";
-		printf "\tRewriteCond %%{REQUEST_URI} !=/\n";
-		printf "\tRewriteRule (.*) - [L]\n";
-		printf "\n";
-		printf "\tRewriteCond %%{HTTP:Upgrade} =websocket [NC]\n";
-		printf "\tRewriteRule /(.*) ${_ws_url}\$1 [P,L]\n";
-		printf "\n";
-		printf "\tRewriteCond %%{HTTP:Upgrade} !=websocket [NC]\n";
-		printf "\tRewriteRule /(.*) ${_proxy}\$1 [P,L]\n";
-		printf "\n";
-		printf "\tRewriteRule ^/(.*)$ ${_proxy}\$1 [P,QSA]\n";
-		printf "\n";
-		printf "\tSSLEngine on\n";
-		printf "\tSSLProtocol all -SSLv2\n";
-		printf "\tSSLCipherSuite HIGH:MEDIUM:!aNULL:!MD5\n";
-		printf "\n";
-		printf "\tSSLCertificateKeyFile    /vhosts/${_vhost_name}/certs/key.pem\n";
-		printf "\tSSLCertificateFile       /vhosts/${_vhost_name}/certs/cert.pem\n";
-		printf "\tSSLCertificateChainFile  /vhosts/${_vhost_name}/certs/chain.pem\n";
-		printf "\n";
-		printf "\tCustomLog \"|bin/rotatelogs -l /logs/${_vhost_name}.ok.https.%%Y-%%m-%%d.log 86400\" json_format\n";
-		printf "\tErrorLog  \"|bin/rotatelogs -l /logs/${_vhost_name}.error.https.%%Y-%%m-%%d.log 86400\"\n";
-		printf "\n";
-		printf "</VirtualHost>\n";
+		printf "\n" >> ${HTTPS_VHOST_FILE};
+		printf "\t<Directory \"${WS_VHOST_PATH}/${_vhost_name}/docroot/\">\n" >> ${HTTPS_VHOST_FILE};
+		printf "\t\tOptions Indexes FollowSymlinks\n" >> ${HTTPS_VHOST_FILE};
+		printf "\t\tAllowOverride None\n" >> ${HTTPS_VHOST_FILE};
+		printf "\t\tRequire all granted\n" >> ${HTTPS_VHOST_FILE};
+		printf "\t</Directory>\n" >> ${HTTPS_VHOST_FILE};
+		printf "\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tRewriteEngine on\n" >> ${HTTPS_VHOST_FILE};
+		printf "\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tRewriteCond %%{DOCUMENT_ROOT}/\$1 -f [OR]\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tRewriteCond %%{DOCUMENT_ROOT}/\$1 -d\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tRewriteCond %%{REQUEST_URI} !=/\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tRewriteRule (.*) - [L]\n" >> ${HTTPS_VHOST_FILE};
+		printf "\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tRewriteCond %%{HTTP:Upgrade} =websocket [NC]\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tRewriteRule /(.*) ${_ws_url}\$1 [P,L]\n" >> ${HTTPS_VHOST_FILE};
+		printf "\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tRewriteCond %%{HTTP:Upgrade} !=websocket [NC]\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tRewriteRule /(.*) ${_proxy}\$1 [P,L]\n" >> ${HTTPS_VHOST_FILE};
+		printf "\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tRewriteRule ^/(.*)$ ${_proxy}\$1 [P,QSA]\n" >> ${HTTPS_VHOST_FILE};
+		printf "\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tSSLEngine on\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tSSLProtocol all -SSLv2\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tSSLCipherSuite HIGH:MEDIUM:!aNULL:!MD5\n" >> ${HTTPS_VHOST_FILE};
+		printf "\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tSSLCertificateKeyFile    /vhosts/${_vhost_name}/certs/key.pem\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tSSLCertificateFile       /vhosts/${_vhost_name}/certs/cert.pem\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tSSLCertificateChainFile  /vhosts/${_vhost_name}/certs/chain.pem\n" >> ${HTTPS_VHOST_FILE};
+		printf "\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tCustomLog \"|bin/rotatelogs -l /logs/${_vhost_name}.ok.https.%%Y-%%m-%%d.log 86400\" json_format\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tErrorLog  \"|bin/rotatelogs -l /logs/${_vhost_name}.error.https.%%Y-%%m-%%d.log 86400\"\n" >> ${HTTPS_VHOST_FILE};
+		printf "\n" >> ${HTTPS_VHOST_FILE};
+		printf "</VirtualHost>\n" >> ${HTTPS_VHOST_FILE};
 	fi;
 
 }

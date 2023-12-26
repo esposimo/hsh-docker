@@ -1,0 +1,9 @@
+Configurare nel file env le due variabili
+
+	WORKING_DIRECTORY=$HOME/.hsh-work
+	CONFIG_FILE=${WORKING_DIRECTORY}/config.json
+
+WORKING_DIRECTORY è la variabile dove sarà presente il file json (e potrà essere utilizzata per altri scopi)
+
+Configurare il config.json come da documentazione
+

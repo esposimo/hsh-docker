@@ -11,15 +11,16 @@
 
 # working directory 
 
+# load 
+source ./env
 
-WORKING_DIRECTORY=$HOME/.hsh-work
-CONFIG_FILE=${WORKING_DIRECTORY}/config.json
 
+PROJECT_DIRECTORY=$(jq --raw-output '.base_path' ${CONFIG_FILE})
 
-WS_DIRECTORY="${WORKING_DIRECTORY}/ws"
-WS_VHOST_FILE="${WS_DIRECTORY}/vhost_list";
-WS_APP_LIST="${WS_DIRECTORY}/app_list";
-WS_LOG_FORMAT="${WS_DIRECTORY}/log_list";
+WS_DIRECTORY=${PROJECT_DIRECTORY}/ws
+WS_VHOST_PATH="${WS_DIRECTORY}/vhosts";
+WS_VHOST_CONF_PATH="${WS_DIRECTORY}/vhosts_conf"
+WS_LOG_FORMAT="${WS_DIRECTORY}/logs";
 
 # per ogni
 
@@ -38,7 +39,7 @@ for s in $LOAD_SCRIPT ; do
 done;
 
 
-DIRECTORY_LIST="${WORKING_DIRECTORY} $WORKING_DIRECTORY/ws"
+DIRECTORY_LIST="${PROJECT_DIRECTORY} ${WS_DIRECTORY} ${WS_VHOST_PATH} ${WS_LOG_FORMAT} ${WS_VHOST_CONF_PATH}"
 
 for d in ${DIRECTORY_LIST} ; do
 	if [[ ! -d ${d} ]] ; then
