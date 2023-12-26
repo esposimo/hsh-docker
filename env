@@ -1,0 +1,4 @@
+
+
+WORKING_DIRECTORY=$HOME/.hsh-work
+CONFIG_FILE=${WORKING_DIRECTORY}/config.json
