@@ -12,10 +12,57 @@
 # working directory 
 
 # load 
+
+
+if [[ $(which docker 2>&1 >/dev/null ; echo $?) -eq 1 ]] ; then
+	printf "Docker non è installato\n";
+	exit 1;
+fi;
+
+if [[ $(which curl 2>&1 >/dev/null ; echo $?) -eq 1 ]] ; then
+	printf "cURL non è installato\n";
+	exit 1;
+fi;
+
+
+if [[ $(which wget 2>&1 >/dev/null ; echo $?) -eq 1 ]] ; then
+	printf "Wget non è installato\n";
+	exit 1;
+fi;
+
+if [[ $(which jq 2>&1 >/dev/null ; echo $?) -eq 1 ]] ; then
+	printf "jq non è installato\n";
+	exit 1;
+fi;
+
+if [[ $(which perl 2>&1 >/dev/null ; echo $?) -eq 1 ]] ; then
+	printf "perl non è installato\n";
+	exit 1;
+fi;
+
+
+BIN_DOCKER=$(which docker)
+BIN_CURL=$(which curl)
+BIN_WGET=$(which wget)
+BIN_JQ=$(which jq)
+BIN_PERL=$(which perl)
+
+if [[ $(which docker-compose 2>&1 1>/dev/null ; echo $?) -eq 1 ]] ; then
+	if [[ $(docker compose 1>&2 2>/dev/null ; echo $?) -eq 1 ]] ; then
+			printf "docker compose non è installato\n";
+			exit 1;
+	else
+			BIN_DOCKER_COMPOSE="${BIN_DOCKER} compose"
+	fi;
+else
+	BIN_DOCKER_COMPOSE=$(which docker-compose)
+fi;
+
+
 source ./env
 
 
-PROJECT_DIRECTORY=$(jq --raw-output '.base_path' ${CONFIG_FILE})
+PROJECT_DIRECTORY=$(${BIN_JQ} --raw-output '.base_path' ${CONFIG_FILE})
 
 WS_DIRECTORY=${PROJECT_DIRECTORY}/ws
 WS_VHOST_PATH="${WS_DIRECTORY}/vhosts";
