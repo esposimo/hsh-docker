@@ -61,9 +61,9 @@ hsh::web::create()
 	VHOST_NAME=${COMMAND_ARGS[0]}
 	GETOPTS_PARAMS="${COMMAND_ARGS[@]:1}"
 
-	if [[ $(jq --arg v "${VHOST_NAME}" '.ws.vhosts|map(.vhost_name == $v)| index(true)' ${CONFIG_FILE}) != "null" ]] ; then
+	if [[ $(${BIN_JQ} --arg v "${VHOST_NAME}" '.ws.vhosts|map(.vhost_name == $v)| index(true)' ${CONFIG_FILE}) != "null" ]] ; then
 		printf "Il dominio ${VHOST_NAME} è già configurato\n";
-		jq --arg v "${VHOST_NAME}" '.ws.vhosts[]|select(.vhost_name == $v)' ${CONFIG_FILE};
+		${BIN_JQ} --arg v "${VHOST_NAME}" '.ws.vhosts[]|select(.vhost_name == $v)' ${CONFIG_FILE};
 		exit;
 	fi;
 
@@ -107,7 +107,7 @@ hsh::web::create()
 }"
 
    _tmpfile=$(mktemp)
-   jq --argjson j "${JSON_DATA}" '.ws.vhosts += [$j]' ${CONFIG_FILE} > $_tmpfile;
+   ${BIN_JQ} --argjson j "${JSON_DATA}" '.ws.vhosts += [$j]' ${CONFIG_FILE} > $_tmpfile;
    mv $_tmpfile ${CONFIG_FILE};
 
    # create single vhosts from config file
@@ -134,12 +134,11 @@ hsh::web::delete()
 
 	if [[ $(jq --arg v "${VHOST_NAME}" '.ws.vhosts|map(.vhost_name == $v)| index(true)' ${CONFIG_FILE}) == "null" ]] ; then
 		printf "Il dominio ${VHOST_NAME} non esiste\n";
-		#jq --arg v "${VHOST_NAME}" '.ws.vhosts[]|select(.vhost_name == $v)' ${CONFIG_FILE};
 		exit;
 	fi;
 
 	_tmpfile=$(mktemp)
-	jq --arg v ${VHOST_NAME} 'del(.ws.vhosts[]|select(.vhost_name == $v))' ${CONFIG_FILE} > $_tmpfile;
+	${BIN_JQ} --arg v ${VHOST_NAME} 'del(.ws.vhosts[]|select(.vhost_name == $v))' ${CONFIG_FILE} > $_tmpfile;
 	mv $_tmpfile ${CONFIG_FILE};
 
 	
@@ -160,12 +159,12 @@ hsh::web::list()
 {
 	printf "\nvhost\t\t\thttp https\tProxyPass\t\tAliases";
 	printf "\n-----------------------------------------------------------------------\n";
-	jq -c '.ws.vhosts[]' ${CONFIG_FILE} | while read v ; do
-		_vhost_name=$(echo $v | jq --raw-output '.vhost_name')
-		_http=$(echo $v | jq --raw-output '.http')
-		_tls=$(echo $v | jq --raw-output '.tls')
-		_proxy=$(echo $v | jq --raw-output '.proxy')
-		_aliases=$(echo $v | jq --raw-output '.aliases')
+	${BIN_JQ} -c '.ws.vhosts[]' ${CONFIG_FILE} | while read v ; do
+		_vhost_name=$(echo $v | ${BIN_JQ} --raw-output '.vhost_name')
+		_http=$(echo $v | ${BIN_JQ} --raw-output '.http')
+		_tls=$(echo $v | ${BIN_JQ} --raw-output '.tls')
+		_proxy=$(echo $v | ${BIN_JQ} --raw-output '.proxy')
+		_aliases=$(echo $v | ${BIN_JQ} --raw-output '.aliases')
 		printf "%23s\t" "${_vhost_name}";
 		printf "${_http}";
 		printf " ${_tls}\t";
@@ -190,12 +189,12 @@ hsh::web::details()
 	VHOST_NAME=${COMMAND_ARGS[0]}
 	GETOPTS_PARAMS="${COMMAND_ARGS[@]:1}"
 
-	if [[ $(jq --arg v "${VHOST_NAME}" '.ws.vhosts|map(.vhost_name == $v)| index(true)' ${CONFIG_FILE}) == "null" ]] ; then
+	if [[ $(${BIN_JQ} --arg v "${VHOST_NAME}" '.ws.vhosts|map(.vhost_name == $v)| index(true)' ${CONFIG_FILE}) == "null" ]] ; then
 		printf "Il dominio ${VHOST_NAME} non esiste\n";
 		exit;
 	fi;
 
-	jq --arg v "${VHOST_NAME}" '.ws.vhosts[]|select(.vhost_name == $v)' ${CONFIG_FILE};
+	${BIN_JQ} --arg v "${VHOST_NAME}" '.ws.vhosts[]|select(.vhost_name == $v)' ${CONFIG_FILE};
 
 }
 
@@ -204,17 +203,17 @@ hsh::web::reload()
 {
 
 	if [[ ! -z $1 ]] ; then
-		if [[ $(jq --arg v "${1}" '.ws.vhosts|map(.vhost_name == $v)| index(true)' ${CONFIG_FILE}) == "null" ]] ; then
+		if [[ $(${BIN_JQ} --arg v "${1}" '.ws.vhosts|map(.vhost_name == $v)| index(true)' ${CONFIG_FILE}) == "null" ]] ; then
 			printf "Il dominio ${1} non esiste\n";
 			exit;
 		fi;
-		_single_vhost=$(jq --arg v "${1}" '.ws.vhosts[]|select(.vhost_name == $v)' ${CONFIG_FILE})
+		_single_vhost=$(${BIN_JQ} --arg v "${1}" '.ws.vhosts[]|select(.vhost_name == $v)' ${CONFIG_FILE})
 		__make_single_vhost $_single_vhost
 	fi;
 
 
 	if [[ -z $1 ]] ; then
-		jq -c '.ws.vhosts[]' ${CONFIG_FILE} | while read v ; do
+		${BIN_JQ} -c '.ws.vhosts[]' ${CONFIG_FILE} | while read v ; do
 			__make_single_vhost $v
 		done;
 	fi;
@@ -226,19 +225,22 @@ __make_single_vhost()
 	# vanno create le directory
 
 	v=$*;
-	_vhost_name=$(echo $v | jq --raw-output '.vhost_name')
-	_http=$(echo $v | jq --raw-output '.http')
-	_tls=$(echo $v | jq --raw-output '.tls')
-	_proxy=$(echo $v | jq --raw-output '.proxy')
-	_aliases=$(echo $v | jq --raw-output '.aliases')
+	_vhost_name=$(echo $v | ${BIN_JQ} --raw-output '.vhost_name')
+	_http=$(echo $v | ${BIN_JQ} --raw-output '.http')
+	_tls=$(echo $v | ${BIN_JQ} --raw-output '.tls')
+	_proxy=$(echo $v | ${BIN_JQ} --raw-output '.proxy')
+	_aliases=$(echo $v | ${BIN_JQ} --raw-output '.aliases')
 
-	_ws_url=$(echo ${_proxy} | perl -pe 's/^http[s]/ws/g')
+
+	_ws_url=$(echo ${_proxy} | ${BIN_PERL} -pe 's/^http[s]/ws/g')
 
 
 	VS_PATH_DOCROOT=${WS_VHOST_PATH}/${_vhost_name}/docroot
 	VS_PATH_CERTS=${WS_VHOST_PATH}/${_vhost_name}/certs
 	HTTP_VHOST_FILE=${WS_VHOST_CONF_PATH}/${_vhost_name}.http.conf
 	HTTPS_VHOST_FILE=${WS_VHOST_CONF_PATH}/${_vhost_name}.https.conf
+
+	INDEX_FILE=${WS_VHOST_PATH}/${_vhost_name}/docroot/index.html
 
 	mkdir -p ${VS_PATH_DOCROOT};
 	mkdir -p ${VS_PATH_CERTS};

@@ -8,14 +8,6 @@ WORKING_DIRECTORY è la variabile dove sarà presente il file json (e potrà ess
 Configurare il config.json come da documentazione
 
 
-
-il file da creare è quello dal nome ".env" e deve contenere solo la WORKING_DIRECTORY, iul resto delle variabili sono tutte conseguenze
-
-
---------
-
-
-
 Clone del repository
 Crea la directory .hsh-work nella home directory dell'utente root
 	mkdir $HOME/.hsh-work
