@@ -7,4 +7,9 @@ WORKING_DIRECTORY è la variabile dove sarà presente il file json (e potrà ess
 
 Configurare il config.json come da documentazione
 
-La rimozione di un webserver non elimina le docroot e i certificati ma solo i conf
+
+Clone del repository
+Crea la directory .hsh-work nella home directory dell'utente root
+	mkdir $HOME/.hsh-work
+Copia il file example.config.json in $HOME/.hsh-work/config.json
+Configura la variabile "base_path" del file config.json con il path dove inserire tutti i file id progetto per la parte ws

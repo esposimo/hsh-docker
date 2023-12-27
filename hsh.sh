@@ -42,10 +42,10 @@ fi;
 
 
 BIN_DOCKER=$(which docker)
-BIN_CURL=$(which curl)
-BIN_WGET=$(which wget)
-BIN_JQ=$(which jq)
-BIN_PERL=$(which perl)
+  BIN_CURL=$(which curl)
+  BIN_WGET=$(which wget)
+    BIN_JQ=$(which jq)
+  BIN_PERL=$(which perl)
 
 if [[ $(which docker-compose 2>&1 1>/dev/null ; echo $?) -eq 1 ]] ; then
 	if [[ $(docker compose 1>&2 2>/dev/null ; echo $?) -eq 1 ]] ; then
@@ -62,20 +62,23 @@ fi;
 source ./env
 
 
-PROJECT_DIRECTORY=$(${BIN_JQ} --raw-output '.base_path' ${CONFIG_FILE})
+PROJECT_DIRECTORY=$(${BIN_JQ} --raw-output '.ws.base_path' ${CONFIG_FILE})
 
-WS_DIRECTORY=${PROJECT_DIRECTORY}/ws
-WS_VHOST_PATH="${WS_DIRECTORY}/vhosts";
+      WS_DIRECTORY=${PROJECT_DIRECTORY}/ws
+     WS_VHOST_PATH="${WS_DIRECTORY}/vhosts";
 WS_VHOST_CONF_PATH="${WS_DIRECTORY}/vhosts_conf"
-WS_LOG_FORMAT="${WS_DIRECTORY}/logs";
+     WS_LOG_FORMAT="${WS_DIRECTORY}/logs";
 
-# per ogni
 
-# vhost file format
-# <vhost-name>;<http-flag>;<https-flag>;<document-root>;<log-format>;<error-log-format>;<alias list>;<app list>
+function rebuild_environment()
+{
+		cat /dev/null > .env
+		printf "export DOCKER_MOUNT_WS_VHOST=${WS_VHOST_PATH}\n" >> .env
+		printf "export DOCKER_MOUNT_WS_LOGS=${WS_LOG_FORMAT}\n" >> .env
+		printf "export DOCKER_MOUNT_WS_CONF=${WS_VHOST_CONF_PATH}\n" >> .env
+}
 
-# app list
-# <app-name>;<app-value>
+
 
 
 LOAD_SCRIPT="ws.sh"
@@ -105,6 +108,7 @@ function usage()
 {
 	printf "Gestione della tua smart-home\n";
 	printf "hsh <command> [PARAMS]\n\n";
+	printf "   init\tInizializza il tool hsh\n";
 	printf "   web\tGestione del webserver\n";
 }
 
@@ -131,5 +135,6 @@ function main() {
   return $?
 }
 
+rebuild_environment
 main
 

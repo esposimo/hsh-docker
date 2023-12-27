@@ -231,7 +231,6 @@ __make_single_vhost()
 	_proxy=$(echo $v | ${BIN_JQ} --raw-output '.proxy')
 	_aliases=$(echo $v | ${BIN_JQ} --raw-output '.aliases')
 
-	_base_docroot=$(${BIN_JQ} --raw-output '.ws.base_docroot' ${CONFIG_FILE})
 
 	_ws_url=$(echo ${_proxy} | ${BIN_PERL} -pe 's/^http[s]/ws/g')
 
@@ -248,13 +247,13 @@ __make_single_vhost()
 
 	if [[ $_http == "true" ]] ; then
 		printf "<VirtualHost *:80>\n" > ${HTTP_VHOST_FILE};
-		printf "\tDocumentRoot \"${WS_VHOST_PATH}/${_vhost_name}/docroot\"\n" >> ${HTTP_VHOST_FILE};
+		printf "\tDocumentRoot \"/vhosts/${_vhost_name}/docroot\"\n" >> ${HTTP_VHOST_FILE};
 		printf "\tServerName ${_vhost_name}\n" >> ${HTTP_VHOST_FILE};
 		for a in $_aliases ; do
 			printf "\tServerAlias ${a}\n" >> ${HTTP_VHOST_FILE};
 		done;
 		printf "\n" >> ${HTTP_VHOST_FILE};
-		printf "\t<Directory \"${WS_VHOST_PATH}/${_vhost_name}/docroot/\">\n" >> ${HTTP_VHOST_FILE};
+		printf "\t<Directory \"/vhosts/${_vhost_name}/docroot/\">\n" >> ${HTTP_VHOST_FILE};
 		printf "\t\tOptions Indexes FollowSymlinks\n" >> ${HTTP_VHOST_FILE};
 		printf "\t\tAllowOverride None\n" >> ${HTTP_VHOST_FILE};
 		printf "\t\tRequire all granted\n" >> ${HTTP_VHOST_FILE};
@@ -283,13 +282,13 @@ __make_single_vhost()
 
 	if [[ $_tls == "true" ]] ; then
 		printf "<VirtualHost *:443>\n" > ${HTTPS_VHOST_FILE};
-		printf "\tDocumentRoot \"${WS_VHOST_PATH}/${_vhost_name}/docroot\"\n" >> ${HTTPS_VHOST_FILE};
+		printf "\tDocumentRoot \"/vhosts/${_vhost_name}/docroot\"\n" >> ${HTTPS_VHOST_FILE};
 		printf "\tServerName ${_vhost_name}\n" >> ${HTTPS_VHOST_FILE};
 		for a in $_aliases ; do
 			printf "\tServerAlias ${a}\n" >> ${HTTPS_VHOST_FILE};
 		done;
 		printf "\n" >> ${HTTPS_VHOST_FILE};
-		printf "\t<Directory \"${WS_VHOST_PATH}/${_vhost_name}/docroot/\">\n" >> ${HTTPS_VHOST_FILE};
+		printf "\t<Directory \"/vhosts/${_vhost_name}/docroot/\">\n" >> ${HTTPS_VHOST_FILE};
 		printf "\t\tOptions Indexes FollowSymlinks\n" >> ${HTTPS_VHOST_FILE};
 		printf "\t\tAllowOverride None\n" >> ${HTTPS_VHOST_FILE};
 		printf "\t\tRequire all granted\n" >> ${HTTPS_VHOST_FILE};
@@ -332,7 +331,6 @@ __make_single_vhost()
 		cp ws/self_cert.pem ${VS_PATH_CERTS}/cert.pem;
 		cp ws/self_cert.pem ${VS_PATH_CERTS}/chain.pem;
 	fi;
-
 
 }
 

@@ -1,0 +1,51 @@
+networks:
+  iot_network:
+    driver: bridge
+    name: hsh_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.84.0/24
+          ip_range: 10.10.84.0/24
+          gateway: 10.10.84.1
+
+services:
+  # WEB SERVER
+  ws:
+    container_name: ws_proxy
+    build:
+      context: .
+      dockerfile: compose-ws.yaml
+    volumes:
+      - ${DOCKER_MOUNT_WS_VHOST}:/vhosts
+      - ${DOCKER_MOUNT_WS_LOGS}:/logs
+      - ${DOCKER_MOUNT_WS_CONF}:/vhosts_conf
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    privileged: true
+    networks:
+      iot_network:
+        ipv4_address: 10.10.84.2
+    ports:
+      - 8090:80
+      - 44443:443
+
+  # Auto Renew Certificate
+#  renew_cert:
+#    container_name: renew_cert
+#    build:
+#      context: .
+#      dockerfile: compose-le.yaml
+#    volumes:
+#      - /docker/data/ws/vhosts:/renew_cert
+#      - /etc/timezone:/etc/timezone:ro
+#      - /etc/localtime:/etc/localtime:ro
+#    privileged: true
+#    networks:
+#      iot_network:
+#        ipv4_address: 10.10.80.100
+
+
+
+
+
