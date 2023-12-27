@@ -241,6 +241,8 @@ __make_single_vhost()
 	HTTP_VHOST_FILE=${WS_VHOST_CONF_PATH}/${_vhost_name}.http.conf
 	HTTPS_VHOST_FILE=${WS_VHOST_CONF_PATH}/${_vhost_name}.https.conf
 
+	INDEX_FILE=${WS_VHOST_PATH}/${_vhost_name}/docroot/index.html
+
 	mkdir -p ${VS_PATH_DOCROOT};
 	mkdir -p ${VS_PATH_CERTS};
 
@@ -321,6 +323,16 @@ __make_single_vhost()
 		printf "\n" >> ${HTTPS_VHOST_FILE};
 		printf "</VirtualHost>\n" >> ${HTTPS_VHOST_FILE};
 	fi;
+
+	printf "<html><head></head><body><h1>${_vhost_name} site</h1></body></html>" >${INDEX_FILE}
+
+
+	if [[ ! -f ${VS_PATH_CERTS}/key.pem ]] ; then
+		cp ws/self_key.pem ${VS_PATH_CERTS}/key.pem;
+		cp ws/self_cert.pem ${VS_PATH_CERTS}/cert.pem;
+		cp ws/self_cert.pem ${VS_PATH_CERTS}/chain.pem;
+	fi;
+
 
 }
 
