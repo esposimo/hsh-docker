@@ -7,3 +7,4 @@ WORKING_DIRECTORY è la variabile dove sarà presente il file json (e potrà ess
 
 Configurare il config.json come da documentazione
 
+La rimozione di un webserver non elimina le docroot e i certificati ma solo i conf
