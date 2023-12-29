@@ -11,24 +11,42 @@ networks:
 
 services:
   # WEB SERVER
-  ws:
-    container_name: ws_proxy
+# ws:
+#   container_name: ws_proxy
+#   build:
+#     context: .
+#     dockerfile: compose-ws.yaml
+#   volumes:
+#     - ${DOCKER_MOUNT_WS_VHOST}:/vhosts
+#     - ${DOCKER_MOUNT_WS_LOGS}:/logs
+#     - ${DOCKER_MOUNT_WS_CONF}:/vhosts_conf
+#     - /etc/timezone:/etc/timezone:ro
+#     - /etc/localtime:/etc/localtime:ro
+#   privileged: true
+#   networks:
+#     iot_network:
+#       ipv4_address: 10.10.84.2
+#   ports:
+#     - 8090:80
+#     - 44443:443
+
+  npm:
+    container_name: npm
     build:
       context: .
-      dockerfile: compose-ws.yaml
+      dockerfile: compose-npm.yaml
     volumes:
-      - ${DOCKER_MOUNT_WS_VHOST}:/vhosts
-      - ${DOCKER_MOUNT_WS_LOGS}:/logs
-      - ${DOCKER_MOUNT_WS_CONF}:/vhosts_conf
+      - /projects/logs:/data/logs
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     privileged: true
     networks:
       iot_network:
-        ipv4_address: 10.10.84.2
+        ipv4_address: 10.10.84.3
     ports:
-      - 8090:80
-      - 44443:443
+      - 80:80
+      - 81:81
+      - 443:443
 
   # Auto Renew Certificate
 #  renew_cert:

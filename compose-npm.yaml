@@ -1,0 +1,8 @@
+FROM jc21/nginx-proxy-manager:latest
+
+RUN mkdir -p /data/nginx/custom/
+
+COPY npm/json_format.conf /etc/nginx/conf.d/json_format.conf
+COPY npm/server_proxy.conf /data/nginx/custom/server_proxy.conf
+COPY npm/elk-log-manager /etc/logrotate.d/elk-log-manager
+
