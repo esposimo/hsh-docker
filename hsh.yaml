@@ -116,3 +116,20 @@ services:
       - 3812:3012
     volumes:
       - ${DIRECTORY_PASSWORD_MANAGE}:/data
+
+
+
+  logstash:
+    container_name: logstash
+    build:
+      context: .
+      dockerfile: compose-logstash.yaml
+    volumes:
+      #- /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    privileged: true
+    networks:
+      log_network:
+        ipv4_address: ${IP_ADDRESS_LOGSTASH}
