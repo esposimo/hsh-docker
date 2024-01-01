@@ -1,4 +1,4 @@
 FROM docker.elastic.co/kibana/kibana:8.10.2
 RUN mkdir -p /usr/share/kibana/config/certs
-COPY --chown=kibana:kibana kibana/kibana.crt /usr/share/kibana/config/certs/kibana.crt
-COPY --chown=kibana:kibana kibana/kibana.key /usr/share/kibana/config/certs/kibana.key
+COPY --chown=kibana:kibana kibana.crt /usr/share/kibana/config/certs/kibana.crt
+COPY --chown=kibana:kibana kibana.key /usr/share/kibana/config/certs/kibana.key

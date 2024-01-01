@@ -1,0 +1,4 @@
+FROM b4bz/homer
+COPY --chown=lighttpd:lighttpd ./homer/assets/* /www/assets/
+COPY --chown=lighttpd:lighttpd ./homer/config.yml /www/assets/config.yml
+COPY --chown=lighttpd:lighttpd ./homer/*.svg /www/assets/icons/

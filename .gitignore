@@ -3,3 +3,5 @@
 .note2
 /kibana/kibana.crt
 /kibana/kibana.key
+kibana.crt
+kibana.key

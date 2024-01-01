@@ -1,0 +1,51 @@
+{
+  "template": {
+    "mappings": {
+      "_source": {
+        "enabled": true,
+        "includes": [],
+        "excludes": []
+      },
+      "_routing": {
+        "required": false
+      },
+      "dynamic": true,
+      "numeric_detection": false,
+      "date_detection": true,
+      "dynamic_date_formats": [
+        "strict_date_optional_time",
+        "yyyy/MM/dd HH:mm:ss Z||yyyy/MM/dd Z"
+      ],
+      "dynamic_templates": [],
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "measure": {
+          "type": "text",
+          "index": true,
+          "index_options": "positions",
+          "eager_global_ordinals": false,
+          "index_phrases": false,
+          "norms": true,
+          "fielddata": false,
+          "store": false
+        },
+        "measure_value": {
+          "type": "double",
+          "index": true,
+          "ignore_malformed": false,
+          "coerce": true,
+          "doc_values": true,
+          "store": false
+        },
+        "name": {
+          "type": "keyword"
+        },
+        "unit_of_measurement": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}

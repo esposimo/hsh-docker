@@ -1,0 +1,39 @@
+{
+  "policy": { 
+    "phases": {
+      "hot": {
+        "min_age": "0ms",
+        "actions": {
+          "set_priority": {
+            "priority": 100
+          },
+          "rollover": {
+            "max_age": "1d"
+          }
+        }
+      },
+      "warm": {
+        "min_age": "60d",
+        "actions": {
+          "set_priority": {
+            "priority": 50
+          },
+          "allocate": {
+            "number_of_replicas": 0
+          }
+        }
+      },
+      "cold": {
+        "min_age": "90d",
+        "actions": {
+          "set_priority": {
+            "priority": 0
+          },
+          "allocate": {
+            "number_of_replicas": 0
+          }
+        }
+      }
+    }
+  }
+}

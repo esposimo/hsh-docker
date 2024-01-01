@@ -34,54 +34,276 @@ Mettere a cron il riavvio del container del webserver
 
 ---------------
 
-Per il webproxy meglio usare nginx proxy manager.
-Per ogni virtualhost creato, c'è da aggiungere la seguente conf 
 
-access_log /data/logs/proxy-host-2_custom.log json_format; (da rivalutare il formato del nome del log che sarà utile a filebeat)
-Per la rotation dei log usare logrotate (già installato nel container)
+Prerequisiti
 
-ed il debug (info) su error log
 
-Nel file /etc/nginx/nginx.conf va inserito il log format 
-log_format json_format escape=json '{'
-'"time_iso" : "$time_iso8601",'
-'"site" : "$server_name",'
-'"server" : "$host",'
-'"src_ip" : "$remote_addr",'
-'"real_ip" : "$realip_remote_addr",'
-'"dest_ip" : "$server_addr",'
-'"dest_port" : "$server_port",'
-'"user" : "$remote_user",'
-'"scheme" : "$scheme",'
-'"protocol" : "$server_protocol",'
-'"response_code" : "$status",'
-'"bytes_in" : "$upstream_bytes_received",'
-'"bytes_out" : "$bytes_sent",'
-'"hreq_http_referer" : "$http_referer",'
-'"hreq_http_user_agent" : "$http_user_agent",'
-'"hreq_http_x_forwarded_for" : "$http_x_forwarded_for",'
-'"hreq_http_x_forwarded_host" : "$http_x_forwarded_host",'
-'"hreq_http_x_header" : "$http_x_header",'
-'"hreq_http_x_requested_with" : "$http_x_requested_with",'
-'"hreq_http_host" : "$http_host",'
-'"hres_http_access_control_allow_origin" : "$sent_http_access_control_allow_origin",'
-'"hres_http_cache_control" : "$sent_http_cache_control",'
-'"hres_http_content_type" : "$sent_http_content_type",'
-'"hres_http_x_powered_by" : "$sent_http_x_powered_by",'
-'"uri_path" :"$uri",'
-'"uri_query" : "$query_string",'
-'"full_request" : "$request_uri",'
-'"full_uri" : "$scheme://$server_name$request_uri",'
-'"http_method" : "$request_method",'
-'"response_time" : "$upstream_response_time",'
-'"request_time" : "$request_time",'
-'"connection_time" : "$connection_time",'
-'"cookie" : "$http_cookie",'
-'"nginx_version" : "$nginx_version"'
-'}';
+Iniziare la procedura di installazione
+
+Configurare le directory (utente root) nel file delle variabili
+
+	DIRECTORY_LOGS_NPM=/projects/npm/logs
+
+Lanciare il comando sysctl -w vm.max_map_count=262144
+
+
+Fare il pull
+
+Lanciare elastic
+docker-compose -p hsh -f hsh.yaml up --build -d elastic_master
+
+Lanciare il reset password dell'utente elastic
+
+OK_ELASTIC=2
+while [ ${OK_ELASTIC} != 0 ] ; do
+	ELASTIC_PASSWORD=$(docker exec -it elastic_master /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -b -s 2>/dev/null)
+	OK_ELASTIC=$?
+done;
+sed -i "s/ELASTIC_PASSWORD=.*/ELASTIC_PASSWORD=${ELASTIC_PASSWORD}/g" variables 
+
+
+Prendere nota della password stampata in output
+
+Creare l'enrollment token per il nodo data cold
+
+OK_ELASTIC=2
+while [ ${OK_ELASTIC} != 0 ] ; do
+	ELASTIC_ENROLLMENT=$(docker exec -it elastic_master /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s node 2>/dev/null)
+	OK_ELASTIC=$?
+done;
+sed -i "s/ELASTIC_ENROLLMENT=.*/ELASTIC_ENROLLMENT=${ELASTIC_ENROLLMENT}/g" variables 
 
 
 
+Lanciare il nodo elastic cold
+
+docker-compose -f search-compose.yaml up -d --build elastic_cold
+
+
+Prendere nota del token (inserirlo nel file environment)
+
+user: admin@example.com
+pass: changeme
 
 
 
+
+ELASTIC_PASSWORD=mb74U0tlgvCOr+O+nwTk
+
+
+
+eyJ2ZXIiOiI4LjEwLjIiLCJhZHIiOlsiMTAuMTAuODQuMTA6OTIwMCJdLCJmZ3IiOiI0MzMyYzEyOWVhYTA0ZjBlOWNhZTczOWQwNjNlMzBlZjE3ZTZhNDU3MWJhMjk0MmRjNjVkNDA4NjFlODMzNzkzIiwia2V5IjoiWlYzZXRZd0JFUWxKVEhpam9NT3c6SVV6LWNWLXNRbm1hdk56b0ljOWJ1dyJ9
+
+
+
+
+
+
+
+
+
+PUT _ilm/policy/mia_policy
+{
+  "policy": {
+    "phases": {
+      "hot": {
+        "actions": {
+          "set_priority": {
+            "priority": 100
+          }
+        },
+        "min_age": "0ms"
+      },
+      "warm": {
+        "min_age": "1m",
+        "actions": {
+          "set_priority": {
+            "priority": 50
+          }
+        }
+      },
+      "cold": {
+        "min_age": "2m",
+        "actions": {
+          "set_priority": {
+            "priority": 0
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+------------- 
+Partire da qui
+Come creare le policy di svecchiamento
+
+Create an index lifecycle policy
+PEr farlo effettuare questa request
+
+
+
+
+PUT _ilm/policy/mia_policy
+{
+  "policy": {
+    "phases": {
+      "hot": {
+        "min_age": "0ms",
+        "actions": {
+          "set_priority": {
+            "priority": 100
+          },
+          "rollover": {
+            "max_age": "1d"
+          }
+        }
+      },
+      "warm": {
+        "min_age": "60d",
+        "actions": {
+          "set_priority": {
+            "priority": 50
+          },
+          "allocate": {
+            "number_of_replicas": 0
+          }
+        }
+      },
+      "cold": {
+        "min_age": "90d",
+        "actions": {
+          "set_priority": {
+            "priority": 0
+          },
+          "allocate": {
+            "number_of_replicas": 0
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+
+Create a component templates
+
+PUT _component_template/miocomponent
+{
+  "template": {
+    "mappings": {
+      "_source": {
+        "enabled": true,
+        "includes": [],
+        "excludes": []
+      },
+      "_routing": {
+        "required": false
+      },
+      "dynamic": true,
+      "numeric_detection": false,
+      "date_detection": true,
+      "dynamic_date_formats": [
+        "strict_date_optional_time",
+        "yyyy/MM/dd HH:mm:ss Z||yyyy/MM/dd Z"
+      ],
+      "dynamic_templates": [],
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "measure": {
+          "type": "text",
+          "index": true,
+          "index_options": "positions",
+          "eager_global_ordinals": false,
+          "index_phrases": false,
+          "norms": true,
+          "fielddata": false,
+          "store": false
+        },
+        "measure_value": {
+          "type": "double",
+          "index": true,
+          "ignore_malformed": false,
+          "coerce": true,
+          "doc_values": true,
+          "store": false
+        },
+        "name": {
+          "type": "keyword"
+        },
+        "unit_of_measurement": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}
+
+
+
+Create an index template
+PUT _index_template/mioindex
+{
+  "template": {
+    "settings": {
+      "index": {
+        "lifecycle": {
+          "name": "mia_policy"
+        }
+      }
+    },
+    "mappings": {
+      "dynamic": true,
+      "numeric_detection": false,
+      "date_detection": true,
+      "dynamic_date_formats": [
+        "strict_date_optional_time",
+        "yyyy/MM/dd HH:mm:ss Z||yyyy/MM/dd Z"
+      ],
+      "_source": {
+        "enabled": true,
+        "includes": [],
+        "excludes": []
+      },
+      "_routing": {
+        "required": false
+      },
+      "dynamic_templates": []
+    }
+  },
+  "index_patterns": [
+    "index_test*"
+  ],
+  "data_stream": {
+    "hidden": false,
+    "allow_custom_routing": false
+  },
+  "composed_of": [
+    "miocomponent"
+  ]
+}
+
+
+Create datastream
+PUT /_data_stream/my-data-stream
+
+
+
+curl -u elastic:C6Ur2LK082SNOfGS3sO- https://10.10.84.10:9200/_data_stream/index_test_2_stream -XPUT -H 'Content-Type: application/json' -k
+
+
+
+
+
+
+curl -u elastic:C6Ur2LK082SNOfGS3sO- https://10.10.84.10:9200/_data_stream/my-data-stream -XPUT -H 'Content-Type: application/json'

@@ -1,5 +1,5 @@
 networks:
-  iot_network:
+  hsh_network:
     driver: bridge
     name: hsh_network
     ipam:
@@ -10,60 +10,109 @@ networks:
           gateway: 10.10.84.1
 
 services:
-  # WEB SERVER
-# ws:
-#   container_name: ws_proxy
-#   build:
-#     context: .
-#     dockerfile: compose-ws.yaml
-#   volumes:
-#     - ${DOCKER_MOUNT_WS_VHOST}:/vhosts
-#     - ${DOCKER_MOUNT_WS_LOGS}:/logs
-#     - ${DOCKER_MOUNT_WS_CONF}:/vhosts_conf
-#     - /etc/timezone:/etc/timezone:ro
-#     - /etc/localtime:/etc/localtime:ro
-#   privileged: true
-#   networks:
-#     iot_network:
-#       ipv4_address: 10.10.84.2
-#   ports:
-#     - 8090:80
-#     - 44443:443
-
   npm:
     container_name: npm
     build:
       context: .
       dockerfile: compose-npm.yaml
     volumes:
-      - /projects/logs:/data/logs
+      - ${DIRECTORY_LOGS_NPM}:/data/logs
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     privileged: true
     networks:
-      iot_network:
-        ipv4_address: 10.10.84.3
+      hsh_network:
+        ipv4_address: ${IP_NPM}
     ports:
       - 80:80
       - 81:81
       - 443:443
 
-  # Auto Renew Certificate
-#  renew_cert:
-#    container_name: renew_cert
-#    build:
-#      context: .
-#      dockerfile: compose-le.yaml
-#    volumes:
-#      - /docker/data/ws/vhosts:/renew_cert
-#      - /etc/timezone:/etc/timezone:ro
-#      - /etc/localtime:/etc/localtime:ro
-#    privileged: true
-#    networks:
-#      iot_network:
-#        ipv4_address: 10.10.80.100
+  elastic_master:
+    container_name: elastic_master
+    build:
+      context: .
+      dockerfile: compose-elastic-master.yaml
+    volumes:
+      #- /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    environment:
+      - node.name=elastic_content
+      - cluster.name=cluster_elastic
+      - node.roles=master, data_content, data_hot
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    privileged: true
+    networks:
+      hsh_network:
+        ipv4_address: ${IP_ADDRESS_ELASTIC_DATA}
 
+  elastic_cold:
+      container_name: elastic_cold
+      build:
+        context: .
+        dockerfile: compose-elastic-cold.yaml
+      volumes:
+        #- /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
+        - /etc/timezone:/etc/timezone:ro
+        - /etc/localtime:/etc/localtime:ro
+      restart: always
+      environment:
+        - node.name=elastic_warm
+        - cluster.name=cluster_elastic
+        - node.roles=master, data_warm , data_cold
+        - ENROLLMENT_TOKEN=${ELASTIC_NODE_ENROLL}
+      privileged: true
+      networks:
+        hsh_network:
+          ipv4_address: ${IP_ADDRESS_ELASTIC_COLD}
 
+  kibana:
+    container_name: kibana
+    build:
+      context: .
+      dockerfile: compose-kibana.yaml
+    volumes:
+      #- /docker/data/logstash/pipeline:/usr/share/logstash/pipeline
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    environment:
+      - SERVER_PUBLICBASEURL=https://${LOCAL_IP}:5601/
+      - SERVER_SSL_CERTIFICATE=/usr/share/kibana/config/certs/kibana.crt
+      - SERVER_SSL_KEY=/usr/share/kibana/config/certs/kibana.key
+      - SERVER_SSL_ENABLED=true
+    privileged: true
+    networks:
+      hsh_network:
+        ipv4_address: ${IP_ADDRESS_KIBANA}
+    ports:
+      - 5601:5601
 
+  homer:
+    container_name: homer
+    build:
+      context: .
+      dockerfile: compose-homer.yaml
+    restart: unless-stopped
+    networks:
+      hsh_network:
+        ipv4_address: ${IP_ADDRESS_HOMER}
+    ports:
+      - 8888:8080      
 
-
+  bitwarden:
+    container_name: bitwarden
+    image: vaultwarden/server
+    restart: unless-stopped
+    environment:
+      WEBSOCKET_ENABLED: 'true'
+    networks:
+      hsh_network:
+        ipv4_address: ${IP_ADDRESS_BITWARDEN}
+    ports:
+      - 3880:80
+      - 3812:3012
+    volumes:
+      - ${DIRECTORY_PASSWORD_MANAGE}:/data
