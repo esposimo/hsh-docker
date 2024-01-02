@@ -1,1 +1,15 @@
+FROM ubuntu as ofe
+COPY logstash/*.conf /tmp/
+COPY variables /tmp
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh && cat /tmp/variables | grep -v ^$ | grep -v ^# | sed -e 's/^/export /' > /tmp/envfile
+RUN apt-get -y update && apt-get -y upgrade && apt-get -y install gettext
+RUN source /tmp/envfile && env && envsubst < /tmp/input.conf > /tmp/o.conf && mv /tmp/o.conf /tmp/input.conf
+RUN source /tmp/envfile && env && envsubst < /tmp/filter.conf > /tmp/o.conf && mv /tmp/o.conf /tmp/filter.conf
+RUN source /tmp/envfile && env && envsubst < /tmp/output.conf > /tmp/o.conf && mv /tmp/o.conf /tmp/output.conf
+WORKDIR /tmp
+
+
 FROM docker.elastic.co/logstash/logstash:8.10.2
+COPY --from=ofe /tmp/input.conf /usr/share/logstash/pipeline/input.conf
+COPY --from=ofe /tmp/filter.conf /usr/share/logstash/pipeline/filter.conf
+COPY --from=ofe /tmp/output.conf /usr/share/logstash/pipeline/output.conf
