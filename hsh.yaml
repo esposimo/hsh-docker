@@ -27,6 +27,11 @@ services:
       - 80:80
       - 81:81
       - 443:443
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
 
   elastic_master:
     container_name: elastic_master
@@ -117,8 +122,6 @@ services:
     volumes:
       - ${DIRECTORY_PASSWORD_MANAGE}:/data
 
-
-
   logstash:
     container_name: logstash
     build:
@@ -131,5 +134,42 @@ services:
     restart: always
     privileged: true
     networks:
-      log_network:
+      hsh_network:
         ipv4_address: ${IP_ADDRESS_LOGSTASH}
+
+
+  brokermqtt:
+    container_name: brokermqtt
+    build:
+      context: .
+      dockerfile: dockerfile-brokermqtt.yaml
+    volumes:
+      - ${DIRECTORY_MQTT_BROKER_DATA}:/mosquitto/data
+      - ${DIRECTORY_MQTT_BROKER_LOG}:/mosquitto/log
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    privileged: true
+    networks:
+      hsh_network:
+        ipv4_address: ${IP_ADDRESS_MQTTBROKER}
+    ports:
+      - 1883:1883
+      - 9001:8080
+
+ 
+  clientmqtt:
+    container_name: clientmqtt
+    build:
+      context: .
+      dockerfile: dockerfile-clientmqtt.yaml
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    privileged: true
+    networks:
+      hsh_network:
+        ipv4_address: ${IP_ADDRESS_MQTTCLIENT}
+    ports:
+      - 5080:80

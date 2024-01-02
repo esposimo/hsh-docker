@@ -2,6 +2,12 @@
 
 
 
+for d in $(grep ^DIRECTORY_ variables | cut -f2 -d"=") ; do
+	mkdir -p ${d};
+done;
+
+
+
 # metto l'ip dell'interfaccia pubblica nel file delle variabili
 # se il server ha più interfacce, modificare questa linea di codice
 LOCAL_IP=$(ip route get 1.2.3.4 | awk '{print $7}' | grep -v ^$)
@@ -74,8 +80,20 @@ curl -k https://${_IP}:9200/_data_stream/hsh_metrics_power -XPUT -H "Content-Typ
 curl -k https://${_IP}:9200/_data_stream/hsh_metrics_log_fe -XPUT -H "Content-Type: application/json" \
 -u elastic:${ELASTIC_PASSWORD%%[[:cntrl:]]}
 
+
+
+printf "Start logstash service\n";
+
+
+
+docker-compose -f hsh.yaml -p hsh --env-file variables up -d --build logstash
+
+
 docker-compose -f hsh.yaml -p hsh --env-file variables up -d --build npm homer bitwarden
 
+docker-compose -f hsh.yaml -p hsh --env-file variables up -d --build brokermqtt
+
+docker-compose -f hsh.yaml -p hsh --env-file variables up -d --build clientmqtt
 
 
 
